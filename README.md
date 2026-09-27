@@ -4,6 +4,8 @@
 
 LearnHub is a responsive Student Learning Platform developed as part of the YuvaIntern Full Stack Developer Virtual Internship.The application provides students with a user-friendly interface to explore courses, view course details, track their learning progress, complete quizzes, view results, and manage their profiles.An admin dashboard is also included for managing courses and viewing platform statistics
 
+## [Live Demo] - https://student-learning-platform-phi.vercel.app/
+
 ## Week 2 - Front-End Application Development
 
 This week's focus was on developing the Front-End Application using React.js, designed with resuable components, responsive layouts,, interactive elements, and client-side navigation.
@@ -55,7 +57,7 @@ This week's focus was on developing the Front-End Application using React.js, de
 |   ├── data/
 │   ├── pages/
 │   ├── App.js
-│   └── index.js
+│   └── main.js
 ├── package.json
 └── README.md
 ```
@@ -122,6 +124,8 @@ npm install
 
 npm run dev
 
+The app will run at ` http://localhost:5173/`
+
 ## Current Project Status
 
 This current version uses static/mock data for several features.Backend APIs, database integration, authentication with JWT, and persistent data storage will be implemented in the upcoming backend and integration stages.
@@ -143,3 +147,4 @@ This current version uses static/mock data for several features.Backend APIs, da
 ## Author
 
 **Sharmila P**
+[Github] - (https://github.com/sharmila-dev1/student-learning-platform)
