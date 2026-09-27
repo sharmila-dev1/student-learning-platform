@@ -47,19 +47,18 @@ This week's focus was on developing the Front-End Application using React.js, de
 
 ## Project Structure
 
-student-learning-platform/
-│
+```
 ├── public/
 ├── src/
-│ ├── components/
-│ ├── pages/
-│ ├── data/
-│ ├── App.jsx
-│ ├── main.jsx
-│ └── index.css
+│   ├── assets/
+│   ├── components/
+|   ├── data/
+│   ├── pages/
+│   ├── App.js
+│   └── index.js
 ├── package.json
-├── package-lock.json
 └── README.md
+```
 
 ## Component-Based Architecture
 
