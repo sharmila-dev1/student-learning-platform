@@ -50,35 +50,13 @@ This week's focus was on developing the Front-End Application using React.js, de
 student-learning-platform/
 │
 ├── public/
-│
 ├── src/
 │ ├── components/
-│ │ ├── Navbar.jsx
-│ │ ├── Footer.jsx
-│ │ ├── CourseCard.jsx
-│ │ └── ProgressBar.jsx
-│ │
 │ ├── pages/
-│ │ ├── Home.jsx
-│ │ ├── Courses.jsx
-│ │ ├── CourseDetails.jsx
-│ │ ├── Login.jsx
-│ │ ├── Register.jsx
-│ │ ├── StudentDashboard.jsx
-│ │ ├── MyCourses.jsx
-│ │ ├── Learning.jsx
-│ │ ├── Quiz.jsx
-│ │ ├── Result.jsx
-│ │ ├── Profile.jsx
-│ │ └── AdminDashboard.jsx
-│ │
 │ ├── data/
-│ │ └── courses.js
-│ │
 │ ├── App.jsx
 │ ├── main.jsx
 │ └── index.css
-│
 ├── package.json
 ├── package-lock.json
 └── README.md
