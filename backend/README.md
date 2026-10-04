@@ -21,10 +21,10 @@ npm install
 ### Create .env
 
 PORT = 5000
-MOMGO_URI = YOUR_MONGODB_ATLAS_CONNECTION_STRING
+MONGO_URI = YOUR_MONGODB_ATLAS_CONNECTION_STRING
 JWT_SCERET = YOUR_JWT_sECRET
 
-### Start teh development server
+### Start the development server
 
 npm run dev
 
@@ -295,19 +295,7 @@ Course Not Found:
 
 ## Authentication Flow
 
-Register
-   ↓
-Login
-   ↓
-JWT Token Generated
-   ↓
-Send JWT with Protected Requests
-   ↓
-JWT Middleware Verifies Token
-   ↓
-Role Middleware Checks User Role
-   ↓
-Allow / Deny Request
+Register → Login → JWT Token Generated → Send JWT with Protected Requests →JWT Middleware Verifies Token → Role Middleware Checks User Role → Allow / Deny Request
 
 ## Role-Based Access Control
 
