@@ -1,48 +1,46 @@
-import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import API from "../api/api";
 
 function Quiz() {
   const { quizId } = useParams();
+  const navigate = useNavigate();
 
-  const questions = [
-    {
-      id: 1,
-      question:
-        "Which technology is used to create the structure of a webpage?",
-      options: ["CSS", "HTML", "JavaScript", "MongoDB"],
-      answer: "HTML",
-    },
-    {
-      id: 2,
-      question: "Which technology is mainly used for styling webpages?",
-      options: ["HTML", "CSS", "Node.js", "Express"],
-      answer: "CSS",
-    },
-    {
-      id: 3,
-      question:
-        "Which language is commonly used to add interactivity to webpages?",
-      options: ["JavaScript", "MongoDB", "Bootstrap", "Mongoose"],
-      answer: "JavaScript",
-    },
-    {
-      id: 4,
-      question:
-        "Which library is used to create resuable component?",
-      options: ["Express.js", "React.js", "MongoDB", "Node.js"],
-      answer: "React.js",
-    },
-    {
-      id: 5,
-      question: "Which database is NoSQL Database?",
-      options: ["MySQL", "MongoDB", "PostgreSQL", "Oracle"],
-      answer: "MongoDB",
-    },
-  ];
-
+  const [quiz, setQuiz] = useState(null);
   const [answers, setAnswers] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchQuiz = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setError("Please log in to take this quiz.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await API.get(`/quizzes/${quizId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setQuiz(response.data.quiz);
+      } catch (err) {
+        setError(err.response?.data?.message || "Unable to load the quiz.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuiz();
+  }, [quizId]);
 
   const handleAnswer = (questionId, answer) => {
     setAnswers((previous) => ({
@@ -51,26 +49,80 @@ function Quiz() {
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const unanswered = questions.some((question) => !answers[question.id]);
+    if (!quiz) return;
 
-    if (unanswered) {
-      alert("Please answer all questions before submitting.");
+    if (Object.keys(answers).length !== quiz.questions.length) {
+      setError("Please answer all questions before submitting.");
       return;
     }
 
-    let score = 0;
+    const token = localStorage.getItem("token");
 
-    questions.forEach((question) => {
-      if (answers[question.id] === question.answer) {
-        score++;
-      }
-    });
+    if (!token) {
+      setError("Please log in to submit the quiz.");
+      return;
+    }
 
-    alert(`Quiz submitted! Your score is ${score}/${questions.length}`);
+    setSubmitting(true);
+    setError("");
+
+    try {
+      const formattedAnswers = quiz.questions.map((question, index) => ({
+        questionIndex: index,
+        answer: answers[index],
+      }));
+
+      const response = await API.post(
+        `/quizzes/${quizId}/submit`,
+        { answers: formattedAnswers },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      navigate(`/student/result/${quizId}`, {
+        state: { result: response.data },
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || "Unable to submit the quiz.");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <main className="container py-5 text-center">
+          <p>Loading quiz...</p>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
+  if (error && !quiz) {
+    return (
+      <>
+        <Navbar />
+        <main className="container py-5 text-center">
+          <div className="alert alert-danger">{error}</div>
+          <Link to="/courses" className="btn btn-primary">
+            Browse Courses
+          </Link>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
+  if (!quiz) return null;
 
   return (
     <>
@@ -78,17 +130,21 @@ function Quiz() {
 
       <main className="bg-light min-vh-100 py-5">
         <div className="container">
-          {/* Header */}
           <div className="mb-4">
-            <h2 className="fw-bold">Course Quiz</h2>
-            <p className="text-muted mb-0">
-              Test your knowledge before viewing your results.
+            <h2 className="fw-bold">{quiz.title}</h2>
+            <p className="text-muted">
+              Answer all questions and submit your quiz to view your results.
             </p>
           </div>
 
+          {error && <div className="alert alert-danger">{error}</div>}
+
           <form onSubmit={handleSubmit}>
-            {questions.map((question, index) => (
-              <div className="card border-0 shadow-sm mb-4" key={question.id}>
+            {quiz.questions.map((question, index) => (
+              <div
+                className="card border-0 shadow-sm mb-4"
+                key={question._id || index}
+              >
                 <div className="card-body p-4">
                   <h5 className="fw-bold mb-4">
                     {index + 1}. {question.question}
@@ -99,16 +155,17 @@ function Quiz() {
                       <input
                         className="form-check-input"
                         type="radio"
-                        name={`question-${question.id}`}
-                        id={`question-${question.id}-${option}`}
+                        name={`question-${index}`}
+                        id={`question-${index}-${option}`}
                         value={option}
-                        checked={answers[question.id] === option}
-                        onChange={() => handleAnswer(question.id, option)}
+                        checked={answers[index] === option}
+                        onChange={() => handleAnswer(index, option)}
+                        disabled={submitting}
                       />
 
                       <label
                         className="form-check-label"
-                        htmlFor={`question-${question.id}-${option}`}
+                        htmlFor={`question-${index}-${option}`}
                       >
                         {option}
                       </label>
@@ -118,20 +175,20 @@ function Quiz() {
               </div>
             ))}
 
-            {/* Submit */}
             <div className="text-center">
-              <button type="submit" className="btn btn-primary px-5">
-                Submit Quiz
+              <button
+                type="submit"
+                className="btn btn-primary px-5"
+                disabled={submitting}
+              >
+                {submitting ? "Submitting..." : "Submit Quiz"}
               </button>
             </div>
           </form>
 
           <div className="text-center mt-3">
-            <Link
-              to={`/student/learning/${quizId}`}
-              className="text-decoration-none"
-            >
-              ← Back to Learning
+            <Link to="/student/dashboard" className="text-decoration-none">
+              ← Back to Dashboard
             </Link>
           </div>
         </div>

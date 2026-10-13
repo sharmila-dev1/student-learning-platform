@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import API from "../api/api";
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -24,7 +25,7 @@ function Register() {
     setError("");
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (
@@ -42,7 +43,27 @@ function Register() {
       return;
     }
 
-    alert("Registration form submitted successfully!");
+    try {
+      const responsee = await API.post("/auth/register", {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      alert(responsee.data.message);
+
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
+    } catch (error) {
+      setError(
+        error.response?.data?.message ||
+          "Regitratiom failed. Please try again.",
+      );
+    }
   };
 
   return (

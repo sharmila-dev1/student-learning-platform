@@ -20,7 +20,7 @@ function CourseCard({ course }) {
           </div>
 
           <Link
-            to={`/courses/${course.id}`}
+            to={`/courses/${course._id}`}
             className="btn btn-outline-primary w-100"
           >
             View Course

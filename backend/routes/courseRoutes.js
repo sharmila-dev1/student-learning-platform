@@ -19,6 +19,7 @@ router.get("/", getCourses);
 router.get("/:id", getCourseById);
 
 // Admin-only routes
+
 router.post("/", protect, authorizeRoles("admin"), createCourse);
 router.put("/:id", protect, authorizeRoles("admin"), updateCourse);
 router.delete("/:id", protect, authorizeRoles("admin"), deleteCourse);

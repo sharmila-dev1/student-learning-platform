@@ -1,12 +1,31 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import CourseCard from "../components/CourseCard";
-import courses from "../data/courses";
+import API from "../api/api";
 
 function Courses() {
+  const [courses, setCourses] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("All");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await API.get("/courses");
+
+        setCourses(response.data.courses);
+      } catch (error) {
+        setError(error.response?.data?.message || "Failed to load courses.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
 
   const categories = [
     "All",
@@ -73,10 +92,18 @@ function Courses() {
         {/* Course Cards */}
         <section className="pb-5">
           <div className="container">
+            {loading && (
+              <div className="text-center py-5">
+                <p>Loading courses...</p>
+              </div>
+            )}
+            {error && (
+              <div className="alert alert-danger text-center">{error}</div>
+            )}
             <div className="row g-4">
               {filteredCourses.length > 0 ? (
                 filteredCourses.map((course) => (
-                  <div className="col-md-6 col-lg-4" key={course.id}>
+                  <div className="col-md-6 col-lg-4" key={course._id}>
                     <CourseCard course={course} />
                   </div>
                 ))

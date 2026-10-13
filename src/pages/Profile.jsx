@@ -1,17 +1,59 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import API from "../api/api";
+import { Link } from "react-router-dom";
 
 function Profile() {
   const [profile, setProfile] = useState({
-    name: "Sharmila",
-    email: "sharmilap40@gmail.com",
-    phone: "8754709346",
-    bio: "Computer Science graduate interested in Full Stack Development.",
+    name: "",
+    email: "",
+    phone: "",
+    bio: "",
   });
 
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setError("Please log in to view your profile.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await API.get("/auth/profile", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const user = response.data.user;
+
+        setProfile({
+          name: user.name || "",
+          email: user.email || "",
+          phone: user.phone || "",
+          bio: user.bio || "",
+        });
+      } catch (err) {
+        setError(
+          err.response?.data?.message ||
+            "Unable to load your profile. Please try again.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -22,15 +64,67 @@ function Profile() {
     }));
   };
 
-  const handleSave = (event) => {
+  const handleSave = async (event) => {
     event.preventDefault();
 
-    setIsEditing(false);
-    setMessage("Profile updated successfully!");
+    const token = localStorage.getItem("token");
 
-    setTimeout(() => {
+    if (!token) {
+      setError("Please log in to update your profile.");
+      return;
+    }
+
+    try {
+      setError("");
       setMessage("");
-    }, 3000);
+
+      const response = await API.put(
+        "/auth/profile",
+        {
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone,
+          bio: profile.bio,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const updatedUser = response.data.user;
+
+      setProfile({
+        name: updatedUser.name || "",
+        email: updatedUser.email || "",
+        phone: updatedUser.phone || "",
+        bio: updatedUser.bio || "",
+      });
+
+      const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          ...savedUser,
+          name: updatedUser.name,
+          email: updatedUser.email,
+        }),
+      );
+
+      setIsEditing(false);
+      setMessage("Profile updated successfully!");
+
+      setTimeout(() => {
+        setMessage("");
+      }, 3000);
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Failed to update profile. Please try again.",
+      );
+    }
   };
 
   return (
@@ -47,7 +141,33 @@ function Profile() {
             </p>
           </div>
 
-          {message && <div className="alert alert-success">{message}</div>}
+          {message && (
+            <div className="alert alert-success" role="alert">
+              {message}
+            </div>
+          )}
+
+          {error && (
+            <div className="alert alert-danger" role="alert">
+              {error}
+              {!localStorage.getItem("token") && (
+                <div className="mt-3">
+                  <Link to="/login" className="btn btn-primary">
+                    Go to Login
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+
+          {loading && (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading profile...</span>
+              </div>
+              <p className="mt-2">Loading your profile...</p>
+            </div>
+          )}
 
           <div className="row g-4">
             {/* Profile Information */}

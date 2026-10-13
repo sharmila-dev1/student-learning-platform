@@ -32,6 +32,18 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+
+    phone: {
+      type: Number,
+      default: "",
+      trim: true,
+    },
+    
+    bio: {
+      type: String,
+      default: "",
+      trim: true,
+    },
   },
   {
     timestamps: true,

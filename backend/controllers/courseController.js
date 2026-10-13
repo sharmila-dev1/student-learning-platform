@@ -1,6 +1,7 @@
 const Course = require("../models/Course");
 
 // Create a course
+
 const createCourse = async (req, res) => {
   try {
     const {
@@ -12,12 +13,46 @@ const createCourse = async (req, res) => {
       duration,
       thumbnail,
       price,
+      learningOutcomes,
+      prerequisites,
+      modules,
     } = req.body;
 
     if (!title || !description || !instructor || !category || !duration) {
       return res.status(400).json({
         message: "Please provide all required course details",
       });
+    }
+
+    // Validate the modules structure
+    if (modules !== undefined && !Array.isArray(modules)) {
+      return res.status(400).json({
+        message: "Modules must be an array",
+      });
+    }
+
+    if (modules) {
+      for (const module of modules) {
+        if (
+          !module.title ||
+          !Array.isArray(module.lessons)
+        ) {
+          return res.status(400).json({
+            message: "Each module must have a title and a lessons array",
+          });
+        }
+
+        if (
+          module.lessons.some(
+            (lesson) =>
+              typeof lesson !== "string" || !lesson.trim()
+          )
+        ) {
+          return res.status(400).json({
+            message: "Lesson titles cannot be empty",
+          });
+        }
+      }
     }
 
     const course = await Course.create({
@@ -29,6 +64,9 @@ const createCourse = async (req, res) => {
       duration,
       thumbnail,
       price,
+      learningOutcomes: learningOutcomes || [],
+      prerequisites: prerequisites || [],
+      modules: modules || [],
     });
 
     res.status(201).json({
@@ -42,7 +80,7 @@ const createCourse = async (req, res) => {
       message: "Server error",
     });
   }
-};
+}
 
 // Get all courses
 const getCourses = async (req, res) => {
@@ -78,7 +116,7 @@ const getCourseById = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Get course error:", error.message);
-    next(error)
+    next(error);
   }
 };
 

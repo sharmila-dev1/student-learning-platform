@@ -1,46 +1,182 @@
 import { Link, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import ProgressBar from "../components/ProgressBar";
-import courses from "../data/courses";
+import API from "../api/api";
 
 function Learning() {
   const { courseId } = useParams();
 
-  const course = courses.find((item) => item.id === Number(courseId));
+  const [course, setCourse] = useState(null);
+  const [lessons, setLessons] = useState([]);
+  const [currentLesson, setCurrentLesson] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [quizId, setQuizId] = useState(null);
 
-  const lessons = [
-    {
-      id: 1,
-      title: "Introduction",
-      duration: "10 min",
-      completed: true,
-    },
-    {
-      id: 2,
-      title: "Core Concepts",
-      duration: "20 min",
-      completed: true,
-    },
-    {
-      id: 3,
-      title: "Practical Implementation",
-      duration: "25 min",
-      completed: false,
-    },
-    {
-      id: 4,
-      title: "Hands-on Practice",
-      duration: "30 min",
-      completed: false,
-    },
-    {
-      id: 5,
-      title: "Final Assessment",
-      duration: "15 min",
-      completed: false,
-    },
-  ];
+  useEffect(() => {
+    const fetchCourseAndProgress = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setError("Please log in to access your lessons.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const headers = {
+          Authorization: `Bearer ${token}`,
+        };
+
+        const courseResponse = await API.get(`/courses/${courseId}`);
+        const fetchedCourse = courseResponse.data.course;
+        
+        setCourse(fetchedCourse);
+
+        const allLessons = (fetchedCourse.modules || []).flatMap(
+          (module, moduleIndex) =>
+            (module.lessons || []).map((lesson, lessonIndex) => ({
+              id: `${moduleIndex + 1}-${lessonIndex + 1}`,
+              title:
+                typeof lesson === "string"
+                  ? lesson
+                  : lesson.title || `Lesson ${lessonIndex + 1}`,
+              moduleTitle: module.title,
+              moduleIndex,
+              lessonIndex,
+              completed: false,
+            })),
+        );
+
+        const progressResponse = await API.get(`/progress/${courseId}`, {
+          headers,
+        });
+
+        const completedIds = progressResponse.data.completedLessons || [];
+
+        const updatedLessons = allLessons.map((lesson) => ({
+          ...lesson,
+          completed: completedIds.includes(lesson.id),
+        }));
+
+        setLessons(updatedLessons);
+
+        setCurrentLesson(
+          updatedLessons.find((lesson) => !lesson.completed) ||
+            updatedLessons[0] ||
+            null,
+        );
+        try {
+          const quizResponse = await API.get(
+            `/quizzes/course/${fetchedCourse._id}`,
+            { headers },
+          );
+
+          setQuizId(quizResponse.data.quiz?._id || null);
+        } catch (quizError) {
+          console.log("No quiz available for this course yet.");
+          setQuizId(null);
+        }
+      } catch (err) {
+        setError(
+          err.response?.data?.message ||
+            "Unable to load the course. Please try again.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourseAndProgress();
+  }, [courseId]);
+
+  const completedLessons = lessons.filter((lesson) => lesson.completed).length;
+
+  const progress = lessons.length
+    ? Math.round((completedLessons / lessons.length) * 100)
+    : 0;
+
+  const handlePreviousLesson = () => {
+    if (!currentLesson) return;
+
+    const currentIndex = lessons.findIndex(
+      (lesson) => lesson.id === currentLesson.id,
+    );
+
+    if (currentIndex > 0) {
+      setCurrentLesson(lessons[currentIndex - 1]);
+      setMessage("");
+      setError("");
+    }
+  };
+
+  const handleNextLesson = () => {
+    if (!currentLesson) return;
+
+    const currentIndex = lessons.findIndex(
+      (lesson) => lesson.id === currentLesson.id,
+    );
+
+    if (currentIndex < lessons.length - 1) {
+      setCurrentLesson(lessons[currentIndex + 1]);
+      setMessage("");
+      setError("");
+    }
+  };
+  const handleMarkComplete = async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setError("Please log in to save your progress.");
+      return;
+    }
+
+    if (!course || !currentLesson) {
+      setError("Please select a lesson first.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+      setMessage("");
+
+      await API.post(
+        "/progress",
+        {
+          courseId: course._id,
+          moduleIndex: currentLesson.moduleIndex,
+          lessonIndex: currentLesson.lessonIndex,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      setLessons((previousLessons) =>
+        previousLessons.map((lesson) =>
+          lesson.id === currentLesson.id
+            ? { ...lesson, completed: true }
+            : lesson,
+        ),
+      );
+
+      setMessage("Lesson completed! Your progress has been saved.");
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Unable to save progress. Please try again.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (!course) {
     return (
@@ -59,10 +195,6 @@ function Learning() {
       </>
     );
   }
-
-  const completedLessons = lessons.filter((lesson) => lesson.completed).length;
-
-  const progress = Math.round((completedLessons / lessons.length) * 100);
 
   return (
     <>
@@ -88,13 +220,27 @@ function Learning() {
             <div className="col-lg-8">
               <div className="card border-0 shadow-sm">
                 <div className="card-body p-4">
+                  {message && (
+                    <div className="alert alert-success" role="alert">
+                      {message}
+                    </div>
+                  )}
+
+                  {error && (
+                    <div className="alert alert-danger" role="alert">
+                      {error}
+                    </div>
+                  )}
                   <h4 className="fw-bold mb-3">
-                    Lesson 3: Practical Implementation
+                    {currentLesson
+                      ? `Lesson ${currentLesson.id}: ${currentLesson.title}`
+                      : "No lessons available"}
                   </h4>
 
                   <p className="text-muted">
-                    In this lesson, you will apply the concepts learned in the
-                    previous lessons through practical examples and exercises.
+                    {currentLesson
+                      ? `You are currently learning "${currentLesson.title}" in the ${currentLesson.moduleTitle} module. Complete this lesson to track your learning progress.`
+                      : "There are no lessons available for this course yet."}
                   </p>
 
                   <h5 className="fw-bold mt-4">Learning Objectives</h5>
@@ -111,12 +257,47 @@ function Learning() {
                   </div>
 
                   <div className="d-flex justify-content-between mt-4">
-                    <button className="btn btn-outline-secondary">
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary"
+                      onClick={handlePreviousLesson}
+                      disabled={
+                        !currentLesson ||
+                        lessons.findIndex(
+                          (lesson) => lesson.id === currentLesson.id,
+                        ) === 0
+                      }
+                    >
                       ← Previous
                     </button>
 
-                    <button className="btn btn-primary">
-                      Mark as Complete
+                    <button
+                      type="button"
+                      className="btn btn-outline-primary"
+                      onClick={handleNextLesson}
+                      disabled={
+                        !currentLesson ||
+                        lessons.findIndex(
+                          (lesson) => lesson.id === currentLesson.id,
+                        ) ===
+                          lessons.length - 1
+                      }
+                    >
+                      Next →
+                    </button>
+
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleMarkComplete}
+                      disabled={
+                        !currentLesson || currentLesson.completed || saving
+                      }
+                    >
+                      {saving
+                        ? "Saving..."
+                        : currentLesson?.completed
+                          ? "Completed ✓"
+                          : "Mark as Complete"}
                     </button>
                   </div>
                 </div>
@@ -127,41 +308,74 @@ function Learning() {
             <div className="col-lg-4">
               <div className="card border-0 shadow-sm">
                 <div className="card-body">
-                  <h5 className="fw-bold mb-3">Course Lessons</h5>
+                  <h5 className="fw-bold mb-3">Course Modules & Lessons</h5>
 
-                  <div className="list-group">
-                    {lessons.map((lesson) => (
-                      <div
-                        key={lesson.id}
-                        className={`list-group-item ${
-                          lesson.id === 3 ? "border-primary" : ""
-                        }`}
-                      >
-                        <div className="d-flex justify-content-between align-items-start">
-                          <div>
-                            <strong>
-                              {lesson.id}. {lesson.title}
-                            </strong>
+                  {course.modules?.length > 0 ? (
+                    course.modules.map((module, moduleIndex) => (
+                      <div className="mb-4" key={module._id || moduleIndex}>
+                        <h6 className="fw-bold text-primary">
+                          Module {moduleIndex + 1}: {module.title}
+                        </h6>
 
-                            <small className="d-block text-muted mt-1">
-                              {lesson.duration}
-                            </small>
-                          </div>
+                        <div className="list-group">
+                          {lessons
+                            .filter(
+                              (lesson) => lesson.moduleIndex === moduleIndex,
+                            )
+                            .map((lesson) => (
+                              <button
+                                type="button"
+                                key={lesson.id}
+                                onClick={() => {
+                                  setCurrentLesson(lesson);
+                                  setMessage("");
+                                  setError("");
+                                }}
+                                className={`list-group-item list-group-item-action text-start ${
+                                  currentLesson?.id === lesson.id
+                                    ? "border-primary bg-light"
+                                    : ""
+                                }`}
+                              >
+                                <div className="d-flex justify-content-between align-items-start gap-2">
+                                  <span>
+                                    {lesson.moduleIndex + 1}.
+                                    {lesson.lessonIndex + 1} {lesson.title}
+                                  </span>
 
-                          {lesson.completed && (
-                            <span className="badge bg-success">✓</span>
-                          )}
+                                  {lesson.completed && (
+                                    <span className="badge bg-success">
+                                      Completed ✓
+                                    </span>
+                                  )}
+                                </div>
+                              </button>
+                            ))}
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    ))
+                  ) : (
+                    <p className="text-muted">
+                      No modules or lessons have been added to this course yet.
+                    </p>
+                  )}
 
-                  <Link
-                    to="/student/quiz/1"
-                    className="btn btn-primary w-100 mt-4"
-                  >
-                    Take Quiz
-                  </Link>
+                  {quizId ? (
+                    <Link
+                      to={`/student/quiz/${quizId}`}
+                      className="btn btn-primary w-100 mt-3"
+                    >
+                      Take Quiz
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn btn-secondary w-100 mt-3"
+                      disabled
+                    >
+                      Quiz Not Available Yet
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

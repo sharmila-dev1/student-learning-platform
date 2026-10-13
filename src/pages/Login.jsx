@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import API from "../api/api";
 
 function Login() {
   const [formData, setFormData] = useState({
@@ -10,6 +11,7 @@ function Login() {
   });
 
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -21,8 +23,7 @@ function Login() {
 
     setError("");
   };
-
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!formData.email || !formData.password) {
@@ -30,7 +31,29 @@ function Login() {
       return;
     }
 
-    alert("Login form submitted successfully!");
+    try {
+      const response = await API.post("/auth/login", {
+        email: formData.email,
+        password: formData.password,
+      });
+
+      // Store JWT token
+      localStorage.setItem("token", response.data.token);
+
+      // Store user information
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+
+      alert("Login successful!");
+      if (response.data.user.role === "admin") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/student/dashboard");
+      }
+    } catch (error) {
+      setError(
+        error.response?.data?.message || "Login failed. Please try again.",
+      );
+    }
   };
 
   return (

@@ -110,7 +110,98 @@ const loginUser = async (req, res) => {
   }
 };
 
+// Get logged-in user's profile
+
+const getUserProfile = async (req, res) => {
+  try {
+    res.status(200).json({
+      message: "Profile fetched successfully",
+      user: {
+        id: req.user._id,
+        name: req.user.name,
+        email: req.user.email,
+        phone: req.user.phone || "",
+        bio: req.user.bio || "",
+        profileImage: req.user.profileImage || "",
+        role: req.user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Get profile error:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Update logged-in user's profile
+const updateUserProfile = async (req, res) => {
+  try {
+    const { name, email, phone, bio } = req.body;
+
+    if (!name || !email) {
+      return res.status(400).json({
+        message: "Name and email are required",
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const existingUser = await User.findOne({
+      email: normalizedEmail,
+      _id: { $ne: req.user._id },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        message: "This email is already registered",
+      });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        $set: {
+          name: name.trim(),
+          email: normalizedEmail,
+          phone: phone?.trim() || "",
+          bio: bio?.trim() || "",
+        },
+      },
+      {
+        returnDocument: "after",
+        runValidators: true,
+      },
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone || "",
+        bio: updatedUser.bio || "",
+        profileImage: updatedUser.profileImage || "",
+        role: updatedUser.role,
+      },
+    });
+  } catch (error) {
+    console.error("Update profile error:", error.message);
+
+    res.status(500).json({
+      message: "Failed to update profile",
+    });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
+  getUserProfile,
+  updateUserProfile,
 };
