@@ -48,6 +48,7 @@ Integrate the frontend application with the backend REST APIs developed in the p
 
 ## Project Structure
 
+```
 student-learning-platform/
 ├── backend/
 │   ├── config/
@@ -70,6 +71,7 @@ student-learning-platform/
 ├── vite.config.js
 ├── package.json                   # Frontend dependencies
 └── README.md
+```
 
 ## Component-Based Architecture
 
