@@ -6,7 +6,7 @@ A full-satck student learning platform built as part of the YuvaIntern internshi
 
 ## [Live Demo] - https://student-learning-platform-phi.vercel.app/
 
-## Week 4 - Front-End -- Back-End Integration
+## Week 4 - FrontEnd -- BackEnd Integration
 
 ### Objective
 
