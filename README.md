@@ -5,8 +5,8 @@
 LearnHub is a full-stack student learning platform developed as part of my Yuvaintern internship project. It allows students to explore courses, enroll in learning programs, access lessons, take quizzes, and manage their learning activities.The project integrates a React frontend with a Node.js and Express backend and uses MongoDB for data storage.
 
 ## Live Demo
-- **Frontend :**https://student-learning-platform-phi.vercel.app/
-- **Backend:**https://student-learning-platform-hrje.vercel.app/
+- **Frontend:** https://student-learning-platform-phi.vercel.app/
+- **Backend:** https://student-learning-platform-hrje.vercel.app/
 
 ## Objective
 
