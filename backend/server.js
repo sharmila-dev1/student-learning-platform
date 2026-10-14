@@ -7,7 +7,7 @@ const authRoutes = require("./routes/authRoutes");
 const courseRoutes = require("./routes/courseRoutes");
 const enrollmentRoutes = require("./routes/enrollmentRoutes");
 const progressRoutes = require("./routes/progressRoutes");
-const quizRoutes = require('./routes/quizRoutes')
+const quizRoutes = require("./routes/quizRoutes");
 const errorHandler = require("./middleware/errorMiddleware");
 
 dotenv.config();
@@ -23,7 +23,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/enrollments", enrollmentRoutes);
 app.use("/api/progress", progressRoutes);
-app.use("/api/quizzes", quizRoutes)
+app.use("/api/quizzes", quizRoutes);
 app.use(errorHandler);
 
 app.get("/", (req, res) => {
@@ -34,6 +34,12 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`server is running on ${PORT}`);
-});
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+
+  app.listen(PORT, () => {
+    console.log(`server is running on ${PORT}`);
+  });
+}
+
+module.exports = app;
