@@ -14,7 +14,6 @@ dotenv.config();
 
 const app = express();
 
-app.use(express.json());
 app.use(
   cors({
     origin: ["https://student-learning-platform-phi.vercel.app"],
@@ -22,6 +21,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
+app.use(express.json());
 
 connectDB();
 
