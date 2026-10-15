@@ -5,6 +5,7 @@ const {
   getMyQuizResults,
   getQuizByCourseId,
   getQuizByCourseIdAdmin,
+  getAllQuizzesAdmin,
   createQuiz,
   updateQuiz,
 } = require("../controllers/quizController");
@@ -32,6 +33,7 @@ router.get(
   authorizeRoles("admin"),
   getQuizByCourseIdAdmin,
 );
+router.get("/admin/all", protect, authorizeRoles("admin"), getAllQuizzesAdmin);
 router.put("/:quizId", protect, authorizeRoles("admin"), updateQuiz);
 
 module.exports = router;

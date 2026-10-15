@@ -7,8 +7,10 @@ function AdminDashboard() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [quizzes, setQuizzes] = useState([]);
   const [showCourseForm, setShowCourseForm] = useState(false);
   const [editingCourseId, setEditingCourseId] = useState(null);
+  const [editingQuizId, setEditingQuizId] = useState(null);
   const [savingCourse, setSavingCourse] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -40,6 +42,18 @@ function AdminDashboard() {
     ],
   });
 
+  const fetchQuizzes = async () => {
+    try {
+      const response = await API.get("/quizzes/admin/all");
+      setQuizzes(response.data.quizzes || []);
+    } catch (error) {
+      console.error(
+        "Failed to fetch quizzes:",
+        error.response?.data?.message || error.message,
+      );
+    }
+  };
+
   useEffect(() => {
     console.log("Form visibility:", showCourseForm);
     console.log("Editing course ID:", editingCourseId);
@@ -65,6 +79,7 @@ function AdminDashboard() {
     };
 
     fetchCourses();
+    fetchQuizzes();
   }, []);
 
   const handleDelete = async (courseId) => {
@@ -960,6 +975,61 @@ function AdminDashboard() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+
+          {/* Quiz Management */}
+          <div className="card border-0 shadow-sm mb-5">
+            <div className="card-body p-4">
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                  <h4 className="fw-bold mb-1">Quiz Management</h4>
+                  <p className="text-muted mb-0">
+                    View and manage quizzes for your courses.
+                  </p>
+                </div>
+                <span className="badge bg-primary">
+                  Total Quizzes: {quizzes.length}
+                </span>
+              </div>
+
+              {quizzes.length === 0 ? (
+                <p className="text-center text-muted py-4">
+                  No quizzes available.
+                </p>
+              ) : (
+                <div className="table-responsive">
+                  <table className="table align-middle">
+                    <thead>
+                      <tr>
+                        <th>Quiz Title</th>
+                        <th>Course</th>
+                        <th>Questions</th>
+                        <th className="text-end">Actions</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {quizzes.map((quiz) => (
+                        <tr key={quiz._id}>
+                          <td className="fw-semibold">{quiz.title}</td>
+                          <td>{quiz.course?.title || "Course unavailable"}</td>
+                          <td>{quiz.questions?.length || 0}</td>
+                          <td className="text-end">
+                            <button
+                              type="button"
+                              className="btn btn-primary btn-sm"
+                              onClick={() => setEditingQuizId(quiz._id)}
+                            >
+                              Edit Quiz
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
 

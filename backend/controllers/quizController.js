@@ -189,6 +189,25 @@ const getQuizByCourseIdAdmin = async (req, res) => {
   }
 };
 
+const getAllQuizzesAdmin = async (req, res) => {
+  try {
+    const quizzes = await Quiz.find()
+      .populate("course", "title")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      count: quizzes.length,
+      quizzes,
+    });
+  } catch (error) {
+    console.error("Get all quizzes error:", error.message);
+
+    res.status(500).json({
+      message: "Failed to fetch quizzes",
+    });
+  }
+};
+
 const createQuiz = async (req, res) => {
   try {
     const { title, course, questions } = req.body;
@@ -371,6 +390,7 @@ module.exports = {
   getMyQuizResults,
   getQuizByCourseId,
   getQuizByCourseIdAdmin,
+  getAllQuizzesAdmin,
   createQuiz,
   updateQuiz,
 };
