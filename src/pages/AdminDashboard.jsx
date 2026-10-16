@@ -183,6 +183,45 @@ function AdminDashboard() {
     }));
   };
 
+  const handleEditQuiz = async (quiz) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await API.get(
+        `/quizzes/admin/course/${quiz.course?._id || quiz.course}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const quizData = response.data.quiz || response.data;
+
+      setEditingQuizId(quizData._id);
+
+      setQuizForm({
+        title: quizData.title || "",
+        questions: quizData.questions.map((question) => ({
+          question: question.question || "",
+          options: [...question.options],
+          answer: question.answer || "",
+        })),
+      });
+
+      setFormError("");
+      setIncludeQuiz(true);
+      setShowCourseForm(true);
+    } catch (error) {
+      console.error("Failed to load quiz for editing:", error);
+
+      window.alert(
+        error.response?.data?.message ||
+          "Failed to load quiz details. Please try again.",
+      );
+    }
+  };
+
   const handleQuestionChange = (questionIndex, value) => {
     setQuizForm((previous) => ({
       ...previous,
@@ -1028,7 +1067,7 @@ function AdminDashboard() {
                             <button
                               type="button"
                               className="btn btn-primary btn-sm"
-                              onClick={() => setEditingQuizId(quiz._id)}
+                              onClick={() => handleEditQuiz(quiz)}
                             >
                               Edit Quiz
                             </button>
