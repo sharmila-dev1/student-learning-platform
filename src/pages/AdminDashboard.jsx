@@ -44,16 +44,25 @@ function AdminDashboard() {
 
   const fetchQuizzes = async () => {
     try {
-      const response = await API.get("/quizzes/admin/all");
+      const token = localStorage.getItem("token");
+
+      const response = await API.get("/quizzes/admin/all", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("Quizzes API response:", response.data);
+
       setQuizzes(response.data.quizzes || []);
     } catch (error) {
       console.error(
         "Failed to fetch quizzes:",
-        error.response?.data?.message || error.message,
+        error.response?.status,
+        error.response?.data || error.message,
       );
     }
   };
-
   useEffect(() => {
     console.log("Form visibility:", showCourseForm);
     console.log("Editing course ID:", editingCourseId);
