@@ -12,6 +12,7 @@ function AdminDashboard() {
   const [showQuizForm, setShowQuizForm] = useState(false);
   const [editingCourseId, setEditingCourseId] = useState(null);
   const [editingQuizId, setEditingQuizId] = useState(null);
+  const [editingQuizCourseId, setEditingQuizCourseId] = useState(null);
   const [savingCourse, setSavingCourse] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -184,21 +185,16 @@ function AdminDashboard() {
   };
 
   const handleEditQuiz = async (quiz) => {
-    console.log("Selected quiz:", quiz);
-    console.log("Course field:", quiz.course);
-
-    const courseId =
-      typeof quiz.course === "object" ? quiz.course?._id : quiz.course;
-
-    console.log("Course ID:", courseId);
-
-    if (!courseId) {
-      alert("Course ID is missing for this quiz.");
-      return;
-    }
-
     try {
       const token = localStorage.getItem("token");
+
+      const courseId =
+        typeof quiz.course === "object" ? quiz.course?._id : quiz.course;
+
+      if (!courseId) {
+        setFormError("Course ID is missing for this quiz.");
+        return;
+      }
 
       const response = await API.get(`/quizzes/admin/course/${courseId}`, {
         headers: {
@@ -206,28 +202,57 @@ function AdminDashboard() {
         },
       });
 
-      console.log("Fetched quiz:", response.data);
-
       const quizData = response.data.quiz || response.data;
 
+      const selectedCourse = courses.find((course) => course._id === courseId);
+
+      if (!selectedCourse) {
+        setFormError(
+          "Course details could not be found. Please refresh the course list and try again.",
+        );
+        return;
+      }
+
+      setEditingCourseId(selectedCourse._id);
       setEditingQuizId(quizData._id);
+      setEditingQuizCourseId(courseId);
+
+      setCourseForm({
+        title: selectedCourse.title || "",
+        description: selectedCourse.description || "",
+        instructor: selectedCourse.instructor || "",
+        category: selectedCourse.category || "",
+        level: selectedCourse.level || "Beginner",
+        duration: selectedCourse.duration || "",
+        price: selectedCourse.price ?? 0,
+        modules: selectedCourse.modules?.length
+          ? selectedCourse.modules.map((module) => ({
+              title: module.title || "",
+              lessons: module.lessons?.length ? [...module.lessons] : [""],
+            }))
+          : [{ title: "", lessons: [""] }],
+      });
 
       setQuizForm({
         title: quizData.title || "",
-        questions: quizData.questions.map((question) => ({
+        questions: (quizData.questions || []).map((question) => ({
           question: question.question || "",
-          options: [...question.options],
+          options: [...(question.options || [])],
           answer: question.answer || "",
         })),
       });
 
-      setFormError("");
       setIncludeQuiz(true);
+      setFormError("");
       setShowCourseForm(true);
     } catch (error) {
       console.error(
-        "Failed to fetch quiz:",
+        "Failed to load quiz for editing:",
         error.response?.data || error.message,
+      );
+
+      setFormError(
+        error.response?.data?.message || "Failed to load quiz details.",
       );
     }
   };
@@ -386,31 +411,37 @@ function AdminDashboard() {
         return;
       }
 
-      // Validate quiz only when creating a new quiz
-      if (includeQuiz && !editingCourseId) {
-        if (!quizForm.title.trim() || quizForm.questions.length === 0) {
+      // Create a quiz for a new course or update an existing quiz
+      if (includeQuiz) {
+        const quizPayload = {
+          title: quizForm.title.trim(),
+          course: editingQuizCourseId || savedCourse._id,
+          questions: quizForm.questions.map((question) => ({
+            question: question.question.trim(),
+            options: question.options.map((option) => option.trim()),
+            answer: question.answer.trim(),
+          })),
+        };
+
+        if (!quizPayload.title || quizPayload.questions.length === 0) {
           setFormError(
             "Please provide a quiz title and at least one question.",
           );
           return;
         }
 
-        for (let i = 0; i < quizForm.questions.length; i++) {
-          const question = quizForm.questions[i];
-          const options = question.options.map((option) => option.trim());
-
-          if (
-            !question.question.trim() ||
-            options.some((option) => !option) ||
-            new Set(options).size !== options.length ||
-            !question.answer.trim() ||
-            !options.includes(question.answer.trim())
-          ) {
-            setFormError(
-              `Please complete question ${i + 1}, provide four distinct options, and select its correct answer.`,
-            );
-            return;
-          }
+        if (editingQuizId) {
+          await API.put(`/quizzes/${editingQuizId}`, quizPayload, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+        } else {
+          await API.post("/quizzes", quizPayload, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
         }
       }
 
@@ -454,7 +485,7 @@ function AdminDashboard() {
         try {
           const quizPayload = {
             title: quizForm.title.trim(),
-            course: savedCourse._id,
+            course: editingQuizCourseId || savedCourse._id,
             questions: quizForm.questions.map((question) => ({
               question: question.question.trim(),
               options: question.options.map((option) => option.trim()),
@@ -498,6 +529,8 @@ function AdminDashboard() {
 
       setShowCourseForm(false);
       setEditingCourseId(null);
+      setEditingQuizId(null);
+      setEditingQuizCourseId(null);
 
       setCourseForm({
         title: "",

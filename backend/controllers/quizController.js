@@ -305,7 +305,7 @@ const createQuiz = async (req, res) => {
 const updateQuiz = async (req, res) => {
   try {
     const { quizId } = req.params;
-    const { title, questions } = req.body;
+    const { title, course, questions } = req.body;
 
     // Validate quiz ID
     if (!mongoose.Types.ObjectId.isValid(quizId)) {
@@ -363,6 +363,37 @@ const updateQuiz = async (req, res) => {
 
     // Update the existing quiz without creating a duplicate
     quiz.title = title.trim();
+
+    if (course) {
+      if (!mongoose.Types.ObjectId.isValid(course)) {
+        return res.status(400).json({
+          message: "Invalid course ID",
+        });
+      }
+
+      const existingCourse = await Course.findById(course);
+
+      if (!existingCourse) {
+        return res.status(404).json({
+          message: "Course not found",
+        });
+      }
+
+      // Prevent assigning a second quiz to a course that already has one
+      const duplicateQuiz = await Quiz.findOne({
+        course,
+        _id: { $ne: quizId },
+      });
+
+      if (duplicateQuiz) {
+        return res.status(409).json({
+          message: "A quiz already exists for this course",
+        });
+      }
+
+      quiz.course = course;
+    }
+
     quiz.questions = questions.map((question) => ({
       question: question.question.trim(),
       options: question.options.map((option) => option.trim()),
