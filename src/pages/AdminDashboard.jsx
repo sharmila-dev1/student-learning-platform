@@ -9,6 +9,7 @@ function AdminDashboard() {
   const [error, setError] = useState("");
   const [quizzes, setQuizzes] = useState([]);
   const [showCourseForm, setShowCourseForm] = useState(false);
+  const [showQuizForm, setShowQuizForm] = useState(false);
   const [editingCourseId, setEditingCourseId] = useState(null);
   const [editingQuizId, setEditingQuizId] = useState(null);
   const [savingCourse, setSavingCourse] = useState(false);
@@ -52,8 +53,6 @@ function AdminDashboard() {
         },
       });
 
-      console.log("Quizzes API response:", response.data);
-
       setQuizzes(response.data.quizzes || []);
     } catch (error) {
       console.error(
@@ -63,6 +62,7 @@ function AdminDashboard() {
       );
     }
   };
+
   useEffect(() => {
     console.log("Form visibility:", showCourseForm);
     console.log("Editing course ID:", editingCourseId);
@@ -184,7 +184,6 @@ function AdminDashboard() {
   };
 
   const handleEditQuiz = async (quiz) => {
-    console.log("Edit Quiz clicked:", quiz);
     try {
       const token = localStorage.getItem("token");
 
@@ -212,6 +211,7 @@ function AdminDashboard() {
 
       setFormError("");
       setIncludeQuiz(true);
+      setShowQuizForm(true);
       setShowCourseForm(true);
     } catch (error) {
       console.error("Failed to load quiz for editing:", error);
@@ -1068,9 +1068,10 @@ function AdminDashboard() {
                             <button
                               type="button"
                               className="btn btn-primary btn-sm"
-                              onClick={() =>{
+                              onClick={() => {
                                 console.log("Edit Quiz clicked!");
-                                handleEditQuiz(quiz)}}
+                                handleEditQuiz(quiz);
+                              }}
                             >
                               Edit Quiz
                             </button>
