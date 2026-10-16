@@ -208,7 +208,22 @@ function AdminDashboard() {
 
       console.log("Fetched quiz:", response.data);
 
-      // Keep your existing code for setting the quiz form here.
+      const quizData = response.data.quiz || response.data;
+
+      setEditingQuizId(quizData._id);
+
+      setQuizForm({
+        title: quizData.title || "",
+        questions: quizData.questions.map((question) => ({
+          question: question.question || "",
+          options: [...question.options],
+          answer: question.answer || "",
+        })),
+      });
+
+      setFormError("");
+      setIncludeQuiz(true);
+      setShowCourseForm(true);
     } catch (error) {
       console.error(
         "Failed to fetch quiz:",
