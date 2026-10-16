@@ -69,11 +69,6 @@ function AdminDashboard() {
   }, [showCourseForm, editingCourseId]);
 
   useEffect(() => {
-    console.log("Form visibility:", showQuizForm);
-    console.log("Editing quiz ID:", editingQuizId);
-  }, [showQuizForm, editingQuizId]);
-
-  useEffect(() => {
     const fetchCourses = async () => {
       try {
         const token = localStorage.getItem("token");
@@ -189,41 +184,35 @@ function AdminDashboard() {
   };
 
   const handleEditQuiz = async (quiz) => {
+    console.log("Selected quiz:", quiz);
+    console.log("Course field:", quiz.course);
+
+    const courseId =
+      typeof quiz.course === "object" ? quiz.course?._id : quiz.course;
+
+    console.log("Course ID:", courseId);
+
+    if (!courseId) {
+      alert("Course ID is missing for this quiz.");
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
 
-      const response = await API.get(
-        `/quizzes/admin/course/${quiz.course?._id || quiz.course}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const response = await API.get(`/quizzes/admin/course/${courseId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
-
-      const quizData = response.data.quiz || response.data;
-
-      setEditingQuizId(quizData._id);
-
-      setQuizForm({
-        title: quizData.title || "",
-        questions: quizData.questions.map((question) => ({
-          question: question.question || "",
-          options: [...question.options],
-          answer: question.answer || "",
-        })),
       });
 
-      setFormError("");
-      setIncludeQuiz(true);
-      setShowQuizForm(true);
-      setShowCourseForm(true);
-    } catch (error) {
-      console.error("Failed to load quiz for editing:", error);
+      console.log("Fetched quiz:", response.data);
 
-      window.alert(
-        error.response?.data?.message ||
-          "Failed to load quiz details. Please try again.",
+      // Keep your existing code for setting the quiz form here.
+    } catch (error) {
+      console.error(
+        "Failed to fetch quiz:",
+        error.response?.data || error.message,
       );
     }
   };
