@@ -184,6 +184,7 @@ function AdminDashboard() {
   };
 
   const handleEditQuiz = async (quiz) => {
+    console.log("Edit Quiz clicked:", quiz);
     try {
       const token = localStorage.getItem("token");
 
