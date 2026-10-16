@@ -69,6 +69,11 @@ function AdminDashboard() {
   }, [showCourseForm, editingCourseId]);
 
   useEffect(() => {
+    console.log("Form visibility:", showQuizForm);
+    console.log("Editing quiz ID:", editingQuizId);
+  }, [showQuizForm, editingQuizId]);
+
+  useEffect(() => {
     const fetchCourses = async () => {
       try {
         const token = localStorage.getItem("token");
