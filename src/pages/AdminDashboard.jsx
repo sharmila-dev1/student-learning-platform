@@ -1068,7 +1068,9 @@ function AdminDashboard() {
                             <button
                               type="button"
                               className="btn btn-primary btn-sm"
-                              onClick={() => handleEditQuiz(quiz._id)}
+                              onClick={() =>{
+                                console.log("Edit Quiz clicked!");
+                                handleEditQuiz(quiz)}}
                             >
                               Edit Quiz
                             </button>
