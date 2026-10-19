@@ -5,6 +5,7 @@
 LearnHub is a full-stack student learning platform developed as part of my Yuvaintern internship project. It allows students to explore courses, enroll in learning programs, access lessons, take quizzes, and manage their learning activities.The project integrates a React frontend with a Node.js and Express backend and uses MongoDB for data storage.
 
 ## Live Demo
+
 - **Frontend:** https://student-learning-platform-phi.vercel.app/
 - **Backend:** https://student-learning-platform-hrje.vercel.app/
 
@@ -22,7 +23,7 @@ Integrate the frontend application with the backend REST APIs developed in the p
 
 **Tools and Platforms** - VS code - Git and GitHub - Postman - Vercel - MongoDB Atlas
 
-## Features 
+## Features
 
 ### Student Features
 
@@ -70,15 +71,16 @@ student-learning-platform/
 │   ├── middleware/
 │   ├── models/                    # Mongoose schemas
 │   ├── routes/                    # API route definitions
-│   ├── seedCourses.js             # Seeds sample courses
-│   ├── seedQuiz.js                # Seeds sample quizzes
+│   ├── tests/
 │   └── server.js                  # Backend entry point
 ├── public/
+├── reports/
 ├── src/
 │   ├── api/api.js                 # Axios instance
 │   ├── assets/
 │   ├── components/                # Navbar, Footer, CourseCard, ProgressBar
 │   ├── pages/                     # Home, Courses, Quiz, Dashboard, ...
+│   ├── tests/
 │   ├── App.jsx                    # Routes
 │   └── main.jsx                   # Frontend entry point
 ├── index.html
@@ -114,17 +116,17 @@ React Router DOM is used for client-side navigation.Main routes include:
 
 Install the following before running the project:
 
--   Node.js and npm
--   MongoDB Atlas account or a local MongoDB instance
--   Git
--   A modern web browser
--   Postman (for API testing)
+- Node.js and npm
+- MongoDB Atlas account or a local MongoDB instance
+- Git
+- A modern web browser
+- Postman (for API testing)
 
 ### Environment Configuration
 
 Create a `.env` file inside the backend directory. A typical configuration is:
 
-``` env
+```env
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
@@ -163,7 +165,7 @@ JWT_SECRET=your_jwt_secret
 
 npm run dev
 
-The local backend normally uses ` http://localhost:5000 `
+The local backend normally uses `http://localhost:5000`
 
 ### Verify the integration
 
@@ -191,16 +193,75 @@ The application includes API route groups for:
 | `/api/progress`    | Learning progress operations         |
 | `/api/quizzes`     | Quiz-related operations              |
 
-
 ## Integration and Error Handling
 
--   The frontend sends requests to the backend and uses returned JSON data to update the interface.
--   Authentication tokens are included when calling protected APIs.
--   Backend validation errors are returned to the frontend and should be shown to the user where handled.
--   When a request fails, check the HTTP status and response body in the browser's Network panel or Postman.
--   Check the backend terminal for server-side errors.
--   Use the correct protocol and backend URL. For a local Express server, `http://localhost:5000` is typically used unless HTTPS has been explicitly configured.
--   Confirm that the MongoDB connection string is loaded from the backend environment variables.
+- The frontend sends requests to the backend and uses returned JSON data to update the interface.
+- Authentication tokens are included when calling protected APIs.
+- Backend validation errors are returned to the frontend and should be shown to the user where handled.
+- When a request fails, check the HTTP status and response body in the browser's Network panel or Postman.
+- Check the backend terminal for server-side errors.
+- Use the correct protocol and backend URL. For a local Express server, `http://localhost:5000` is typically used unless HTTPS has been explicitly configured.
+- Confirm that the MongoDB connection string is loaded from the backend environment variables.
+
+## Testing strategy
+
+### Frontend unit test
+
+Frameworks: Vitest, jsdom, React Testing Library, and jest-dom.
+
+The test in `src/tests/example.test.jsx` renders a small `WelcomeMessage` component and verifies that the “Welcome to LearnHub” heading is present. This is a focused component-rendering/unit-style test of the test environment and assertion setup.
+
+Run frontend tests from the repository root:
+
+```
+npm run test:run
+```
+
+The root `vite.config.js` limits test discovery to `src/**/*.{test,spec}.{js,jsx,ts,tsx}` so backend tests are not accidentally run as frontend tests.
+
+### Backend API tests
+
+Frameworks: Vitest, Supertest, Mongoose, and MongoDB Memory Server.
+
+Run backend tests from the backend directory:
+
+```bash
+cd backend
+npm run test:run
+```
+
+`backend/tests/app.test.js` checks:
+
+- Root API responds with HTTP 200 and the expected JSON message.
+- Root response has a JSON content type.
+- Unknown API route returns HTTP 404.
+- Registration rejects a request with required fields missing.
+- Login rejects a request with credentials missing.
+
+`backend/tests/courses.test.js` checks:
+
+- Course listing returns HTTP 200, a count, an array, and the seeded test course.
+- Course creation without authentication is rejected.
+- A request using an invalid token is rejected.
+- An invalid course ID is handled with a client-error/not-found response.
+- Course update without authentication is rejected.
+- Course deletion without authentication is rejected.
+
+The course tests use MongoDB Memory Server so that test records are isolated from the production database. On first use, MongoDB Memory Server may need to obtain a MongoDB binary; network restrictions or a slow download can cause its setup hook to time out. Run the backend test command separately and review its output.
+
+### Manual integration checks
+
+The deployed application was manually tested. The following areas were reported as tested on the deployed site:
+
+- Login and register
+- Home page and navigation
+- Courses page and course data loading
+- Enrolment and My-courses
+- Student dashboard and profile
+- Quiz and result page
+- Admin dashboard
+- Add, update, and delete courses/quizzes
+- Application flows that were exercised during deployment verification
 
 ## Testing Performed
 
@@ -248,6 +309,14 @@ The application can be tested using the following scenarios:
 **Challenge:** Progress updates may fail when required lesson identifiers are missing or invalid.
 
 **Solution:** Verify that the frontend sends the correct lesson identifier and that the backend validates it before saving progress.
+
+## Debugging record
+A deployed request to `/api/courses` returned HTTP 500 with a Mongoose buffering timeout:
+`Operation courses.find() buffering timed out after 10000ms`.
+
+The backend Vercel entry point originally imported `server.js`, while the database connection was started in `server.js` only when that file was executed directly. When imported as a module by the Vercel entry point, that startup condition was not met, so the database connection was not established before the course query.
+
+The entry point was updated to initialize and await the database connection before forwarding the request to the Express app. The database helper was also adjusted to allow connection errors to propagate rather than terminating the process from the helper. After deployment, the developer confirmed that the Courses API and deployed site were working.
 
 ## Future Improvements
 
