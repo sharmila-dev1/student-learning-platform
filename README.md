@@ -161,11 +161,11 @@ The application includes API functionality for the following areas:
 
 ## Authentication and Authorization
 
-JWT is used to authenticate users.
-Protected endpoints require a valid authentication token.
-Role-based middleware restricts administrator-only operations.
-Passwords are hashed before storage when the configured password-hashing implementation is used.
-Invalid requests and unauthorized operations are handled by the backend.
+- JWT is used to authenticate users.
+- Protected endpoints require a valid authentication token.
+- Role-based middleware restricts administrator-only operations.
+- Passwords are hashed before storage when the configured password-hashing implementation is used.
+- Invalid requests and unauthorized operations are handled by the backend.
 
 ## 🗄️ Database
 
